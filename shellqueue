@@ -49,7 +49,6 @@ run_loop() {
   lockfile-create -q --retry 3 "$lockfile"
   lockfile-touch "$lockfile" &
   trap "kill $!" 0
-  lock_process="$!"
   for task in "$spooldir"/*.task ; do
     echo "$task"
     chmod u+x "$task"
