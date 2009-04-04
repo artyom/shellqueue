@@ -34,7 +34,6 @@ addtask() {
   cat <<EOF >> "$taskfile"
   set -e
   trap "rm \"\$0\"" 0
-  tail -n1 "\$0"
   cd "$PWD" || {
     echo 'Execution directory inaccessible' >&2
     exit 1
@@ -50,9 +49,9 @@ run_loop() {
   lockfile-touch "$lockfile" &
   trap "kill $!" 0
   for task in "$spooldir"/*.task ; do
-    echo "$task"
+    command_text=$(tail -n1 "$task")
     chmod u+x "$task"
-    "$task"
+    "$task" || echo "task failed: $command_text"
   done
   lockfile-remove "$lockfile"
 }
