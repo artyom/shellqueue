@@ -1,7 +1,7 @@
 shellqueue
 ==========
 
-*shellqueue* is a basic tool for running shell command in fifo queue.
+*shellqueue* is a basic tool for running shell commands in fifo queue.
 
 Its main goal is to provide a simple interface for running non-interactive
 commands in fifo queue without writing a separate shellscript. Just fire a
