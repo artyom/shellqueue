@@ -1,0 +1,36 @@
+shellqueue
+==========
+
+*shellqueue* is a basic tool for running shell command in fifo queue.
+
+Its main goal is to provide a simple interface for running non-interactive
+commands in fifo queue without writing a separate shellscript. Just fire a
+command and it will run in its turn.
+
+Please note, only the `$PWD` variable is preserved from environment: each task
+will try to change directory to that it was added from.
+
+    Usage: shellqueue [options]
+
+      --list  show list of queued commands
+      --add   add command to queue from stdin
+      --execute
+              process queue in fifo mode
+
+Spool directory is `~/.queue_spool` by default, feel free to change it in
+source. It is also should be safe to add it's processing form (`shellqueue
+--execute`) as a cron job, i.e. running every 10 minutes or so. Lockfiles are
+used while processing spool to avoid race condition (be sure to have
+`lockfile-progs` installed).
+
+
+Bugs and suggestions
+--------------------
+
+Please feel free to send me any bugreports/patches; if you want some features
+-- just clone and implement them. Actually, I'm okay with this tool as it is
+and I don't intend to extend its functionality: it was originally written for
+sorting out my downloads and similar junk without running multiple `mv` or
+`cp` commands in parallel (precious disk io).
+
+Artyom Pervukhin <artyom@evasive.ru>

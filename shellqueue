@@ -1,0 +1,80 @@
+#!/bin/bash
+# vim: tabstop=2 shiftwidth=2
+
+spooldir=$HOME/.queue_spool
+
+set -e
+shopt -s nullglob
+
+usage="Usage: $(basename $0) [options]
+
+  --list  show list of queued commands
+  --add   add command to queue from stdin
+  --execute
+          process queue in fifo mode
+"
+
+case $# in
+  0) exec echo "$usage" ;;
+esac
+
+check_spooldir() {
+  if [ ! -d "$spooldir" ] ; then
+    mkdir -m 0750 -p "$spooldir" && echo "Spool directory $spooldir created"
+  fi
+}
+
+addtask() {
+  if tty -s ; then
+    echo "$0: please give command on stdin" >&2
+    exit 2
+  fi
+  taskfile=$(mktemp)
+  echo '#!/bin/bash' > "$taskfile"
+  cat <<EOF >> "$taskfile"
+  set -e
+  trap "rm \"\$0\"" 0
+  tail -n1 "\$0"
+  cd "$PWD" || {
+    echo 'Execution directory inaccessible' >&2
+    exit 1
+  }
+EOF
+  cat >> "$taskfile"
+  mv "$taskfile" "$spooldir/$(date +%s-%Y%m%d-%H%M)-$RANDOM.task"
+}
+
+run_loop() {
+  lockfile="$spooldir/shellqueue"
+  lockfile-create -q --retry 3 "$lockfile"
+  lockfile-touch "$lockfile" &
+  trap "kill $!" 0
+  lock_process="$!"
+  for task in "$spooldir"/*.task ; do
+    echo "$task"
+    chmod u+x "$task"
+    "$task"
+  done
+  lockfile-remove "$lockfile"
+}
+
+case $1 in
+  --help | -h)
+    exec echo "$usage" ;;
+  --list | -l)
+    for task in "$spooldir"/*.task ; do
+      echo " *** $task ***"
+      tail -n1 "$task"
+    done ;;
+  --add | -a)
+    check_spooldir && addtask
+    exit $? ;;
+  --execute | -x)
+    check_spooldir && run_loop
+    exit $? ;;
+  -*)
+    echo "$0: invalid option: $1" >&2
+    exit 1 ;;
+  *)
+    echo Nothing to do ;;
+esac
