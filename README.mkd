@@ -18,7 +18,7 @@ will try to change directory to that it was added from.
               process queue in fifo mode
 
 Spool directory is `~/.queue_spool` by default, feel free to change it in
-source. It is also should be safe to add it's processing form (`shellqueue
+source. It is also should be safe to add its processing form (`shellqueue
 --execute`) as a cron job, i.e. running every 10 minutes or so. Lockfiles are
 used while processing spool to avoid race condition (be sure to have
 `lockfile-progs` installed).
