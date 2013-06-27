@@ -10,7 +10,7 @@ usage="Usage: $(basename $0) [options]
 
   --list  show list of queued commands
   --add   add command to queue from stdin
-  --execute
+  --run
           process queue in fifo mode
 "
 
@@ -27,7 +27,6 @@ check_spooldir() {
 addtask() {
   if tty -s ; then
     echo "$0: please give command on stdin" >&2
-    exit 2
   fi
   taskfile=$(mktemp)
   echo '#!/bin/bash' > "$taskfile"
@@ -40,7 +39,9 @@ addtask() {
   }
 EOF
   cat >> "$taskfile"
-  mv "$taskfile" "$spooldir/$(date +%s-%Y%m%d-%H%M)-$RANDOM.task"
+  taskid=$(date +%s-%Y%m%d-%H%M)-$RANDOM
+  mv "$taskfile" "$spooldir/$taskid.task"
+  echo $taskid
 }
 
 run_loop() {
@@ -49,9 +50,14 @@ run_loop() {
   lockfile-touch "$lockfile" &
   trap "kill $!" 0
   for task in "$spooldir"/*.task ; do
+    outfile=${task/.task/.out}
+    errfile=${task/.task/.err}
+    statusfile=${task/.task/.status}
     command_text=$(tail -n1 "$task")
     chmod u+x "$task"
-    "$task" || echo "task failed: $command_text"
+    "$task" >$outfile 2>$errfile \
+        && echo "$?" > $statusfile \
+        || echo "$?" > $statusfile
   done
   lockfile-remove "$lockfile"
 }
@@ -67,7 +73,7 @@ case $1 in
   --add | -a)
     check_spooldir && addtask
     exit $? ;;
-  --execute | -x)
+  --run | -r)
     check_spooldir && run_loop
     exit $? ;;
   -*)
